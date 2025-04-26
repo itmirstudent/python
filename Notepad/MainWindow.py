@@ -5,12 +5,15 @@ from AboutWindow import About
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
+        self._modified = False
+        self._filepath = ""
         self._version = "1.0"
-        self.title("Блокнот")
+        self._set_title()
         self.geometry("800x600")
         self.iconbitmap("title.ico")
         self.edit_text = scrolledtext.ScrolledText(width=96, height=37)
         self.edit_text.pack(fill=tk.BOTH, expand=1)
+        self.edit_text.bind("<Key>", lambda key: self._set_modify(True))
         self._create_menu()
 
     def _create_menu(self):
@@ -36,24 +39,26 @@ class MainWindow(tk.Tk):
         if self._filepath != "":
             with open(self._filepath, "w") as fl:
                 text = self.edit_text.get("1.0", tk.END)
-                fl.write(text)
+                fl.write(text[:-1])
+            self._set_modify(False)
         else:
             self._save_file_as()
 
     def _save_file_as(self):
         self._filepath = filedialog.asksaveasfilename()
-        self.title(f"Блокнот {self._filepath}")
         if self._filepath != "":
             self._save_file()
+            self._set_title()
 
     def _open_file(self):
         self._filepath = filedialog.askopenfilename()
         if self._filepath != "":
             with open(self._filepath, "r") as fl:
                 text = fl.read()
-                self.title(f"Блокнот {fl.name}")
                 self.edit_text.delete("1.0", tk.END)
                 self.edit_text.insert("1.0", text)
+                self._set_title()
+                self._set_modify(False)
 
     def _exit(self):
         self.destroy()
@@ -64,3 +69,10 @@ class MainWindow(tk.Tk):
 
     def version(self):
         return self._version
+
+    def _set_title(self):
+        self.title(("*" if self._modified else "") + f"{"Безымянный" if self._filepath == "" else self._filepath} - Блокнот")
+
+    def _set_modify(self, val = False):
+        self._modified = val
+        self._set_title()
